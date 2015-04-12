@@ -1,4 +1,4 @@
-require 'active_record' unless defined? ActiveRecord
+#require 'active_record' unless defined? ActiveRecord
 
 module Paranoia
   @@default_sentinel_value = nil
@@ -201,7 +201,13 @@ class ActiveRecord::Base
     def self.paranoia_scope
       where(paranoia_column => paranoia_sentinel_value)
     end
-    default_scope { paranoia_scope }
+    default_scope do
+      if caller_locations.keep_if{|location| location.to_s=~/active_record\/migration.rb/}.empty?
+        paranoia_scope
+      else
+        with_deleted
+      end
+    end
 
     before_restore {
       self.class.notify_observers(:before_restore, self) if self.class.respond_to?(:notify_observers)
